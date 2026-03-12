@@ -486,4 +486,5 @@ AS
 	SET s.quantity=0
 	FROM STORED_IN s
 	JOIN inserted i ON s.users_id=i.users_id AND s.pantry_no=i.pantry_no AND s.ingredient_id=i.ingredient_id
+
 	WHERE i.quantity<0;
