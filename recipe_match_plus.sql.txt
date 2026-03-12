@@ -1,0 +1,489 @@
+CREATE DATABASE RECIPEMATCHPLUS;
+USE RECIPEMATCHPLUS;
+
+CREATE TABLE USERS (
+    users_id       INT           NOT NULL,
+    username      VARCHAR(50)   NOT NULL,
+    email         VARCHAR(100)  NOT NULL,
+    passwords      VARCHAR(100)  NOT NULL,
+    created_at    DATETIME      DEFAULT CURRENT_TIMESTAMP,
+    modified_at   DATETIME      DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(users_id),
+    UNIQUE(username),
+    UNIQUE(email)
+);
+
+CREATE TABLE RECIPE (
+    recipe_id        INT               NOT NULL,
+    recipe_name      VARCHAR(100)      NOT NULL,
+    cook_time        INT               NOT NULL,
+    taste_type       VARCHAR(10)       NOT NULL,
+    difficulty_level VARCHAR(10)       NOT NULL,
+    added_by         INT               NOT NULL,
+    created_at       DATETIME          DEFAULT CURRENT_TIMESTAMP,
+    modified_at      DATETIME          DEFAULT CURRENT_TIMESTAMP,
+
+    CHECK (taste_type IN('sweet', 'salty', 'sour', 'spicy')),
+	CHECK (difficulty_level IN('easy', 'medium', 'hard')),
+	PRIMARY KEY (recipe_id),
+    FOREIGN KEY (added_by) REFERENCES USERS (users_id)
+       ON DELETE CASCADE
+       ON UPDATE CASCADE
+);
+
+CREATE TABLE INGREDIENT_CATEGORY (
+    category_id    INT              NOT NULL,
+    category_name  VARCHAR(100)     NOT NULL,
+    parent_id      INT              NULL,
+    created_at     DATETIME         DEFAULT CURRENT_TIMESTAMP,
+    modified_at    DATETIME         DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (category_id),
+    UNIQUE (category_name),
+    FOREIGN KEY (parent_id) REFERENCES INGREDIENT_CATEGORY(category_id)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION
+);
+
+CREATE TABLE INGREDIENT (
+    ingredient_id    INT             NOT NULL,
+    ingredient_name  VARCHAR(100)    NOT NULL,
+    category_id      INT             NOT NULL,
+    created_at       DATETIME        DEFAULT CURRENT_TIMESTAMP,
+    modified_at      DATETIME        DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (ingredient_id),
+    UNIQUE (ingredient_name),
+    FOREIGN KEY (category_id) REFERENCES INGREDIENT_CATEGORY(category_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE PANTRY (
+    users_id     INT              NOT NULL,
+    pantry_no    INT              NOT NULL,
+    created_at   DATETIME         DEFAULT CURRENT_TIMESTAMP,
+    modified_at  DATETIME         DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (users_id, pantry_no),
+    FOREIGN KEY (users_id) REFERENCES USERS(users_id)
+       ON DELETE CASCADE
+       ON UPDATE CASCADE
+);
+
+CREATE TABLE RECIPE_STEP (
+    recipe_id     INT              NOT NULL,
+    step_number   INT              NOT NULL,
+    step_text     VARCHAR(1000)    NOT NULL,
+    created_at    DATETIME         DEFAULT CURRENT_TIMESTAMP,
+    modified_at   DATETIME         DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (recipe_id, step_number),
+    FOREIGN KEY (recipe_id) REFERENCES RECIPE(recipe_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE STORED_IN (
+    users_id       INT              NOT NULL,
+    pantry_no      INT              NOT NULL,
+    ingredient_id  INT              NOT NULL,
+    quantity       DECIMAL(10,2),
+    unit           VARCHAR(20),
+
+    PRIMARY KEY (users_id, pantry_no, ingredient_id),    
+    FOREIGN KEY (users_id, pantry_no) REFERENCES PANTRY(users_id, pantry_no)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (ingredient_id) REFERENCES INGREDIENT(ingredient_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE RECIPE_INGREDIENT (
+    recipe_id      INT               NOT NULL,
+    ingredient_id  INT               NOT NULL,
+    amount_grams   DECIMAL(10,2),
+
+    PRIMARY KEY (recipe_id, ingredient_id),
+    FOREIGN KEY (recipe_id) REFERENCES RECIPE(recipe_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+    FOREIGN KEY (ingredient_id) REFERENCES INGREDIENT(ingredient_id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE BOOKMARK (
+    users_id    INT               NOT NULL,
+    recipe_id   INT               NOT NULL,
+    created_at  DATETIME          DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (users_id, recipe_id),
+    FOREIGN KEY (users_id) REFERENCES USERS(users_id)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION,
+    FOREIGN KEY (recipe_id) REFERENCES RECIPE(recipe_id)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION
+);
+
+CREATE TABLE RATING (
+    users_id    INT               NOT NULL,
+    recipe_id   INT               NOT NULL,
+    stars       INT               NOT NULL,
+    created_at  DATETIME          DEFAULT CURRENT_TIMESTAMP,
+    modified_at DATETIME          DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (users_id, recipe_id),
+    CHECK (stars BETWEEN 1 AND 5),
+    FOREIGN KEY (users_id) REFERENCES USERS(users_id)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION,
+    FOREIGN KEY (recipe_id) REFERENCES RECIPE(recipe_id)
+        ON DELETE NO ACTION
+        ON UPDATE NO ACTION
+);
+
+INSERT INTO USERS (users_id, username, email, passwords) VALUES
+(1, 'Alice', 'alice@example.com', 'Alice2025'),
+(2, 'Bob', 'bob@example.com', 'BobPass12'),
+(3, 'Charlie', 'charlie@example.com', 'Charlie2024'),
+(4, 'David', 'david@example.com', 'DavidPass13'),
+(5, 'Eva', 'eva@example.com', 'Eva2023'),
+(6, 'Admin', 'admin.system@example.com', 'Admin1234'),
+(7, 'Miray', 'miray@example.com', 'MirayPass14'),
+(8, 'Noah', 'noah@example.com', 'Noah2022'),
+(9, 'Olivia', 'olivia@example.com', 'OliviaPass15'),
+(10, 'Rachel', 'rachel@example.com', 'Rachel2021');
+
+INSERT INTO RECIPE (recipe_id, recipe_name, cook_time, taste_type, difficulty_level, added_by) VALUES
+(101, 'Tomato Soup', 25, 'salty', 'easy', 1),
+(102, 'Cheesy Garlic Pasta', 30, 'salty', 'medium', 2),
+(103, 'Vanilla Milkshake', 8, 'sweet', 'easy', 3),
+(104, 'Beef Wellington', 105, 'salty', 'hard', 4),
+(105, 'Chili Garlic Noodles', 20, 'spicy', 'medium', 5),
+(106, 'Lemon Chicken Skillet', 25, 'sour', 'medium', 6),
+(107, 'Chocolate Soufflé', 45, 'sweet', 'hard', 7),
+(108, 'Lemon Braised Lamb Shanks', 120, 'sour', 'hard', 8),
+(109, 'Chicken Vindaloo', 55, 'spicy', 'hard', 9),
+(110, 'Strawberry Cheesecake', 40, 'sweet', 'medium', 10);
+
+
+INSERT INTO INGREDIENT_CATEGORY (category_id, category_name, parent_id) VALUES
+(100, 'Fresh Produce', NULL),
+(200, 'Animal Products', NULL),
+(300, 'Dry Goods', NULL),
+(400, 'Flavoring Agents', NULL),
+
+(1, 'Fruits', 100),
+(2, 'Vegetables', 100),
+(3, 'Dairy', 200),
+(4, 'Meat & Polutry', 200),
+(5, 'Seafood', 200),
+(6, 'Grains & Pasta', 300),
+(7, 'Oils & Condiments', 400),
+(8, 'Baking Essentials', 300),
+(9, 'Spices',400),
+(10, 'Sweeteners', 300);
+
+INSERT INTO INGREDIENT (ingredient_id, ingredient_name, category_id) VALUES
+(1, 'Strawberry', 1),
+(2, 'Lemon', 1),
+(3, 'Tomato', 2),
+(4, 'Onion', 2),
+(5, 'Garlic', 2),
+(6, 'Mushrooms', 2),
+(7, 'Green Onion', 2),
+(8, 'Red Chili', 2),
+(9, 'Carrot', 2),
+(10, 'Celery Stalk', 2),
+(11, 'Milk', 3),
+(12, 'Butter', 3),
+(13, 'Cheddar Cheese', 3),
+(14, 'Cream Cheese', 3),
+(15, 'Vanilla Ice Cream', 3),
+(16, 'Heavy Cream', 3),
+(17, 'Beef Tenderloin', 4),
+(18, 'Chicken Breast', 4),
+(19, 'Chicken Thigh', 4),
+(20, 'Lamb Shanks', 4),
+(21, 'Prosciutto', 4),
+(22, 'Pasta', 6),
+(23, 'Noodles', 6),
+(24, 'Puff Pastry', 6),
+(25, 'Flour', 6),
+(26, 'Olive Oil', 7),
+(27, 'Chili Oil', 7),
+(28, 'Lemon Juice', 7),
+(29, 'Vinegar', 7),
+(30, 'Chili Sauce', 7),
+(31, 'Soy Sauce', 7),
+(32, 'Vindaloo Paste', 7),
+(33, 'Mustard', 7),
+(34, 'Chicken Stock', 7),
+(35, 'Beef Stock', 7),
+(36, 'Dark Chocolate', 8),
+(37, 'Eggs', 8),
+(38, 'Cocoa Powder', 8),
+(39, 'Vanilla Extract', 8),
+(40, 'Biscuits', 8),
+(41, 'Salt', 9),
+(42, 'Black Pepper', 9),
+(43, 'Thyme', 9),
+(44, 'Rosemary', 9),
+(45, 'Sugar', 10);
+
+INSERT INTO PANTRY (users_id, pantry_no) VALUES
+(1, 1001),
+(2, 1002),
+(3, 1003),
+(4, 1004),
+(5, 1005),
+(6, 1006),
+(7, 1007),
+(8, 1008),
+(9, 1009),
+(10, 1010);
+
+INSERT INTO RECIPE_STEP (recipe_id, step_number, step_text) VALUES
+(101, 1, 'Melt the butter in a pot, add onions and garlic, and sauté until softened.'),
+(101, 2, 'Add the tomatoes and chicken stock, then simmer for 15 minutes.'),
+(101, 3, 'Blend the mixture until smooth, stir in the heavy cream, and season with salt and pepper.'),
+
+(102, 1, 'Boil the pasta in salted water and drain.'),
+(102, 2, 'Sauté the garlic in olive oil until fragrant.'),
+(102, 3, 'Add heavy cream, cheddar, and cream cheese; stir until the sauce thickens, then combine with the pasta.'),
+
+(103, 1, 'Place vanilla ice cream, milk, and vanilla extract into a blender.'),
+(103, 2, 'Blend until smooth. Pour into glasses and serve.'),
+
+(104, 1, 'Season the beef tenderloin with salt and pepper, then sear on all sides over high heat.'),
+(104, 2, 'Finely chop the mushrooms and cook in a pan until all moisture evaporates (Duxelles).'),
+(104, 3, 'Lay out cling film, arrange prosciutto slices, spread the mushroom mixture over them, place the beef in the center, and roll tightly.'),
+(104, 4, 'Roll out the puff pastry, wrap the beef inside, brush with egg wash, and bake until golden brown.'),
+
+(105, 1, 'Cook the noodles according to the package instructions.'),
+(105, 2, 'Heat the chili oil, garlic, and soy sauce in a pan.'),
+(105, 3, 'Toss the cooked noodles in the pan and mix thoroughly with the sauce.'),
+
+(106, 1, 'Dredge the chicken breasts in flour.'),
+(106, 2, 'Melt butter in a skillet and pan-fry the chicken until golden brown.'),
+(106, 3, 'Add lemon juice, chicken stock, and garlic; simmer until the sauce thickens.'),
+
+(107, 1, 'Melt dark chocolate and butter using a double boiler.'),
+(107, 2, 'Whip the egg whites with sugar until stiff peaks form.'),
+(107, 3, 'Add flour to the chocolate mixture, then gently fold in the egg whites without deflating them. Pour into ramekins and bake.'),
+
+(108, 1, 'Season the lamb shanks with salt and sear them in a pan.'),
+(108, 2, 'In the same pan, sauté the carrots, celery, and onions.'),
+(108, 3, 'Add beef stock, lemon juice, and rosemary. Return the lamb to the pot and braise over low heat until the meat falls off the bone.'),
+
+(109, 1, 'Marinate the chicken with Vindaloo paste and vinegar for 1 hour.'),
+(109, 2, 'Caramelize the onions in a pot.'),
+(109, 3, 'Add the marinated chicken and water, then cook until the chicken is tender.'),
+
+(110, 1, 'Crush the biscuits, mix with melted butter, and press into the bottom of a mold.'),
+(110, 2, 'Beat cream cheese, sugar, heavy cream, and eggs until smooth.'),
+(110, 3, 'Pour the batter over the crust and bake. Garnish with strawberries after cooling.');
+
+INSERT INTO STORED_IN (users_id, pantry_no, ingredient_id, quantity, unit) VALUES
+(1, 1001, 3, 4, 'pieces'),
+(1, 1001, 4, 2, 'pieces'),
+(1, 1001, 5, 6, 'cloves'),
+
+(2, 1002, 17, 1, 'pack'),
+(2, 1002, 11, 200, 'g'),
+(2, 1002, 36, 1, 'pack'),
+
+(3, 1003, 33, 300, 'g'),
+(3, 1003, 27, 1, 'bar'),
+(3, 1003, 30, 50, 'ml'),
+
+(4, 1004, 13, 1, 'pieces'),
+(4, 1004, 10, 250, 'g'),
+(4, 1004, 9, 250, 'g'),
+
+(5, 1005, 18, 2, 'packs'),
+(5, 1005, 5, 4, 'cloves'),
+(5, 1005, 24, 1, 'bottle'),
+
+(6, 1006, 14, 2, 'pieces'),
+(6, 1006, 22, 150, 'ml'),
+(6, 1006, 29, 200, 'ml'),
+
+(7, 1007, 27, 1, 'bar'),
+(7, 1007, 28, 6, 'pieces'),
+(7, 1007, 10, 150, 'g'),
+
+(8, 1008, 16, 2, 'pieces'),
+(8, 1008, 41, 2, 'pieces'),
+(8, 1008, 40, 500, 'ml'),
+
+(9, 1009, 15, 3, 'pieces'),
+(9, 1009, 26, 1, 'jar'),
+(9, 1009, 8, 4, 'pieces'),
+
+(10, 1010, 1, 400, 'g'),
+(10, 1010, 12, 1, 'pack'),
+(10, 1010, 33, 250, 'g');
+
+INSERT INTO RECIPE_INGREDIENT (recipe_id, ingredient_id, amount_grams) VALUES
+(101, 3, 300),
+(101, 4, 100),
+(101, 5, 10),
+(101, 10, 20),
+(101, 39, 300),
+(101, 45, 50),
+(101, 31, 5),
+(101, 32, 3),
+
+(102, 17, 150),
+(102, 5, 10),
+(102, 10, 15),
+(102, 11, 80),
+(102, 45, 70),
+(102, 31, 5),
+(102, 32, 3),
+
+(103, 9, 250),
+(103, 33, 30),
+(103, 30, 5),
+
+(104, 13, 250),
+(104, 6, 150),
+(104, 37, 50),
+(104, 38, 10),
+(104, 19, 200),
+(104, 28, 1),
+(104, 31, 5),
+(104, 32, 3),
+
+(105, 18, 120),
+(105, 5, 8),
+(105, 21, 20),
+(105, 24, 30),
+(105, 25, 15),
+(105, 7, 10),
+
+(106, 14, 200),
+(106, 22, 20),
+(106, 5, 10),
+(106, 29, 15),
+(106, 43, 2),
+(106, 44, 2),
+
+(107, 27, 120),
+(107, 10, 20),
+(107, 28, 2),
+(107, 33, 25),
+(107, 29, 10),
+
+(108, 16, 400),
+(108, 41, 80),
+(108, 42, 50),
+(108, 40, 300),
+(108, 22, 20),
+(108, 44, 2),
+(108, 43, 2),
+
+(109, 15, 300),
+(109, 26, 40),
+(109, 8, 15),
+(109, 5, 10),
+(109, 23, 15),
+
+(110, 1, 200),
+(110, 12, 250),
+(110, 33, 80),
+(110, 10, 50),
+(110, 36, 120),
+(110, 28, 2),
+(110, 30, 5);
+
+INSERT INTO BOOKMARK (users_id, recipe_id) VALUES
+(1,110),
+(2,105),
+(3,110),
+(4,102),
+(5,101),
+(6,107),
+(7,108),
+(8,109),
+(9,106),
+(10,104);
+
+INSERT INTO RATING (users_id, recipe_id, stars) VALUES
+(1, 105, 4),
+(2, 110, 5),
+(3, 102, 4),
+(4, 106, 3),
+(5, 107, 5),
+(6, 101, 4),
+(7, 108, 5),
+(8, 103, 3),
+(9, 104, 5),
+(10, 109, 4);
+
+ALTER TABLE INGREDIENT_CATEGORY ADD CONSTRAINT FK_Cat_Parent
+FOREIGN KEY (parent_id) REFERENCES INGREDIENT_CATEGORY(category_id)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION;
+
+CREATE VIEW USER_RECIPE_MATCH AS
+SELECT u.users_id, r.recipe_id, r.recipe_name,
+CAST( ROUND ( ( SUM(CASE
+    WHEN si.ingredient_id=r_ing.ingredient_id THEN 1
+    WHEN cat_pantry.category_id=cat_recipe.category_id THEN 0.5
+    ELSE 0 
+    END)/COUNT(r_ing.ingredient_id))*100,0) AS INT) AS match_score
+FROM USERS u
+CROSS JOIN  RECIPE r
+JOIN RECIPE_INGREDIENT r_ing ON r_ing.recipe_id=r.recipe_id
+LEFT JOIN PANTRY p ON p.users_id=u.users_id
+LEFT JOIN STORED_IN si ON si.users_id=p.users_id AND si.pantry_no=p.pantry_no
+LEFT JOIN INGREDIENT ing_pantry ON si.ingredient_id=ing_pantry.ingredient_id
+LEFT JOIN INGREDIENT_CATEGORY cat_pantry ON ing_pantry.category_id=cat_pantry.category_id
+LEFT JOIN INGREDIENT ing_recipe ON r_ing.ingredient_id=ing_recipe.ingredient_id
+LEFT JOIN INGREDIENT_CATEGORY cat_recipe ON ing_recipe.category_id=cat_recipe.category_id
+GROUP BY u.users_id, r.recipe_id, r.recipe_name;
+
+SELECT *
+FROM USER_RECIPE_MATCH
+ORDER BY users_id ASC, match_score DESC;
+
+CREATE VIEW recipe_rating_summary AS
+SELECT 
+    r.recipe_id,
+	r.recipe_name,
+    CAST(AVG(rt.stars) AS DECIMAL (10, 2)) AS avg_rating,
+    COUNT(rt.users_id) AS total_values
+FROM RECIPE r
+LEFT JOIN RATING rt 
+	ON r.recipe_id = rt.recipe_id
+GROUP BY r.recipe_id, r.recipe_name;
+
+SELECT *
+FROM recipe_rating_summary
+
+CREATE TRIGGER update_recipe_modified_at ON RECIPE
+AFTER UPDATE
+AS
+	UPDATE RECIPE
+	SET modified_at = CURRENT_TIMESTAMP
+	WHERE recipe_id IN (SELECT recipe_id FROM inserted);
+
+CREATE TRIGGER update_recipe_modified_on_rating ON RATING
+AFTER INSERT
+AS
+    UPDATE RECIPE
+    SET modified_at = CURRENT_TIMESTAMP
+    WHERE recipe_id IN (SELECT recipe_id FROM inserted);
+
+CREATE TRIGGER prevent_negative_stock ON STORED_IN
+AFTER UPDATE
+AS
+	UPDATE s
+	SET s.quantity=0
+	FROM STORED_IN s
+	JOIN inserted i ON s.users_id=i.users_id AND s.pantry_no=i.pantry_no AND s.ingredient_id=i.ingredient_id
+	WHERE i.quantity<0;
